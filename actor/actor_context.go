@@ -652,18 +652,16 @@ func (ctx *actorContext) stopAllChildren() {
 }
 
 func (ctx *actorContext) tryRestartOrTerminate() {
-	if ctx.extras != nil && !ctx.extras.children.Empty() {
-		return
-	}
+    if ctx.extras != nil && !ctx.extras.children.Empty() {
+        return
+    }
 
-	switch atomic.LoadInt32(&ctx.state) {
-	case stateRestarting:
-		ctx.CancelReceiveTimeout()
-		ctx.restart()
-	case stateStopping:
-		ctx.CancelReceiveTimeout()
-		ctx.finalizeStop()
-	}
+    switch atomic.LoadInt32(&ctx.state) {
+    case stateRestarting:
+        ctx.restart()
+    case stateStopping:
+        ctx.finalizeStop()
+    }
 }
 
 func (ctx *actorContext) restart() {
