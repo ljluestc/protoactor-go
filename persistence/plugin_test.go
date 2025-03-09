@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"sync"
 	"testing"
-
+    "time"
+	
 	"google.golang.org/protobuf/proto"
 
 	"github.com/asynkron/protoactor-go/actor"
@@ -72,8 +73,9 @@ func newSnapshot(state string) *Snapshot {
 }
 
 type myActor struct {
-	Mixin
-	state string
+    Mixin
+    state   string
+    watched *actor.PID
 }
 
 var _ actor.Actor = (*myActor)(nil)
@@ -108,7 +110,24 @@ func (a *myActor) Receive(ctx actor.Context) {
 		// receipt of a message for test cases.
 		queryState = a.state
 		queryWg.Done()
-	}
+    case *actor.Terminated:
+        fmt.Printf("Received Terminated for %v at %v\n", msg.Who, time.Now())
+        ctx.SetReceiveTimeout(2 * time.Second)
+    case actor.ReceiveTimeout:
+        fmt.Printf("Timeout triggered at %v, attempting reconnect\n", time.Now())
+        childProps := actor.PropsFromFunc(func(ctx actor.Context) {})
+        newChild, err := ctx.SpawnNamed(childProps, "child-reconnect")
+        if err != nil {
+            fmt.Printf("Failed to spawn new child: %v\n", err)
+            return
+        }
+        a.watched = newChild
+        ctx.Send(ctx.Self(), &actor.Watch{Watcher: newChild})
+    case *actor.Stopping:
+        fmt.Println("Actor stopping")
+    case *actor.Stopped:
+        fmt.Println("Actor stopped")
+    }
 }
 
 /****** test code *******/
