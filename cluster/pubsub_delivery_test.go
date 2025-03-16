@@ -36,14 +36,11 @@ func TestPubSubMemberDeliveryActor_NonBlocking(t *testing.T) {
     subscriberPID, err := system.Root.SpawnNamed(subscriberProps, "slow-subscriber")
     assert.NoError(t, err)
 
-    // Create test batch with valid PubSubEnvelope and SubscriberIdentity
-    envelope := &PubSubEnvelope{
-        TypeName: "test-message", // Correct field from cluster.proto
-        Data:     []byte("test payload"),
-    }
+    // Create test batch with minimal PubSubEnvelope and SubscriberIdentity
+    envelope := &PubSubEnvelope{} // Minimal initialization
 
     identity := &SubscriberIdentity{
-        Subscriber: &SubscriberIdentity_Pid{ // Correct oneof field
+        Subscriber: &SubscriberIdentity_Pid{ // Correct oneof variant
             Pid: subscriberPID,
         },
     }
